@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Tentang MiSnow</title>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100%;
+  background: #eaf8ff;
+  overflow-x: hidden;
+}
+
+.poster {
+  display: block;
+  width: 100%;
+  max-width: 1100px;
+  height: auto;
+  margin: 0 auto;
+}
+
+/* FIXED SCREEN-FOLLOWING CUBE */
+
+#cube {
+  --size: 86px;
+
+  position: fixed;
+  z-index: 999999;
+  top: 20vh;
+  left: 75%;
+  width: var(--size);
+  height: var(--size);
+
+  pointer-events: none;
+  perspective: 900px;
+
+  opacity: 0;
+  transform: translateY(12px) scale(.8);
+
+  transition:
+    opacity .65s ease,
+    transform .65s ease;
+
+  will-change: top, left;
+}
+
+#cube.visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.spin {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  animation: spin 12s linear infinite;
+}
+
+.face {
+  position: absolute;
+  width: var(--size);
+  height: var(--size);
+  border-radius: 18px;
+
+  border: 2px solid rgba(255,255,255,.96);
+
+  background: linear-gradient(
+    135deg,
+    rgba(255,255,255,.98),
+    rgba(130,215,255,.65)
+  );
+
+  box-shadow:
+    inset 0 0 20px rgba(255,255,255,.95),
+    0 0 28px rgba(45,160,240,.4);
+
+  backdrop-filter: blur(5px);
+}
+
+.front {
+  transform: translateZ(calc(var(--size) / 2));
+}
+
+.back {
+  transform: rotateY(180deg) translateZ(calc(var(--size) / 2));
+}
+
+.right {
+  transform: rotateY(90deg) translateZ(calc(var(--size) / 2));
+}
+
+.left {
+  transform: rotateY(-90deg) translateZ(calc(var(--size) / 2));
+}
+
+.top {
+  transform: rotateX(90deg) translateZ(calc(var(--size) / 2));
+}
+
+.bottom {
+  transform: rotateX(-90deg) translateZ(calc(var(--size) / 2));
+}
+
+.snowflake {
+  position: absolute;
+  inset: 0;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  color: white;
+  font-size: 42px;
+
+  text-shadow:
+    0 0 8px white,
+    0 0 18px #70cfff,
+    0 0 30px #42aef0;
+
+  transform: translateZ(calc(var(--size) / 2 + 2px));
+}
+
+.red-dot {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  right: -7px;
+  top: -7px;
+  border-radius: 50%;
+  background: #ef3340;
+  box-shadow: 0 0 14px rgba(239,51,64,.6);
+}
+
+.shadow {
+  position: absolute;
+  left: 10%;
+  bottom: -24px;
+  width: 80%;
+  height: 14px;
+  background: rgba(30,100,160,.2);
+  border-radius: 50%;
+  filter: blur(9px);
+}
+
+@keyframes spin {
+  from {
+    transform: rotateX(-12deg) rotateY(0deg);
+  }
+
+  to {
+    transform: rotateX(348deg) rotateY(360deg);
+  }
+}
+
+@media(max-width:650px) {
+  #cube {
+    --size: 60px;
+  }
+
+  .face {
+    border-radius: 13px;
+  }
+
+  .snowflake {
+    font-size: 30px;
+  }
+}
+
+@media(prefers-reduced-motion:reduce) {
+  .spin {
+    animation: none;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<!-- YOUR ORIGINAL FULL POSTER -->
+<img
+  id="poster"
+  class="poster"
+  src="./poster.png"
+  alt="Tentang MiSnow"
+>
+
+<!-- 3D ICE CUBE -->
+<div id="cube">
+
+  <div class="spin">
+
+    <div class="face front"></div>
+    <div class="face back"></div>
+    <div class="face right"></div>
+    <div class="face left"></div>
+    <div class="face top"></div>
+    <div class="face bottom"></div>
+
+    <div class="snowflake">❄</div>
+
+  </div>
+
+  <div class="red-dot"></div>
+  <div class="shadow"></div>
+
+</div>
+
+<script>
+(() => {
+
+  const cube = document.getElementById("cube");
+  const poster = document.getElementById("poster");
+
+  let targetTop = 20;
+  let currentTop = 20;
+
+  let targetLeft = 0;
+  let currentLeft = 0;
+
+  let firstUpdate = true;
+  let ticking = false;
+
+  const clamp = (n, min, max) =>
+    Math.max(min, Math.min(max, n));
+
+  /*
+    Calculate the cube position from
+    the actual scroll position of THIS webpage.
+  */
+
+  function updateTarget() {
+
+    const maxScroll = Math.max(
+      1,
+      document.documentElement.scrollHeight -
+      window.innerHeight
+    );
+
+    const progress = clamp(
+      window.scrollY / maxScroll,
+      0,
+      1
+    );
+
+    /* Travels down the screen */
+    targetTop = 14 + progress * 70;
+
+    /* Travels from right to left and back */
+    const cubeWidth = cube.offsetWidth;
+    const maxLeft = window.innerWidth - cubeWidth - 16;
+
+    const center = maxLeft / 2;
+    const movement = maxLeft * .34;
+
+    targetLeft = clamp(
+      center + movement *
+      Math.cos(progress * Math.PI * 2),
+      12,
+      maxLeft
+    );
+
+    if (firstUpdate) {
+      currentTop = targetTop;
+      currentLeft = targetLeft;
+      firstUpdate = false;
+    }
+  }
+
+  /*
+    Smooth movement.
+    No wheel interception.
+  */
+
+  function animate() {
+
+    currentTop += (targetTop - currentTop) * .18;
+    currentLeft += (targetLeft - currentLeft) * .18;
+
+    cube.style.top = currentTop + "vh";
+    cube.style.left = currentLeft + "px";
+
+    requestAnimationFrame(animate);
+  }
+
+  function requestUpdate() {
+
+    if (ticking) return;
+
+    ticking = true;
+
+    requestAnimationFrame(() => {
+      updateTarget();
+      ticking = false;
+    });
+  }
+
+  /*
+    Fade in when the poster enters the viewport.
+    Fade out when the poster leaves it.
+  */
+
+  const observer = new IntersectionObserver(
+    entries => {
+
+      entries.forEach(entry => {
+
+        if (entry.isIntersecting) {
+          cube.classList.add("visible");
+        } else {
+          cube.classList.remove("visible");
+        }
+
+      });
+
+    },
+    {
+      threshold: 0.01
+    }
+  );
+
+  observer.observe(poster);
+
+  window.addEventListener(
+    "scroll",
+    requestUpdate,
+    { passive: true }
+  );
+
+  window.addEventListener(
+    "resize",
+    requestUpdate,
+    { passive: true }
+  );
+
+  updateTarget();
+  animate();
+
+})();
+</script>
+
+</body>
+</html>
